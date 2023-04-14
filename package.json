@@ -1,0 +1,21 @@
+{
+  "name": "utm-projection",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "test": ""
+  },
+  "exports":{
+    ".":{
+      "import":"./dist/index.js",
+      "types":"./dist/index.d.ts"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.0.4"
+  }
+}
