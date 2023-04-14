@@ -1,8 +1,9 @@
 {
   "name": "utm-projection",
   "version": "1.0.0",
-  "description": "",
+  "description": "LatLng to UTM converter vice versa",
   "type": "module",
+  "module": "./dist/index.js",
   "scripts": {
     "test": ""
   },
@@ -12,10 +13,27 @@
       "types":"./dist/index.d.ts"
     }
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "utm",
+    "latlon",
+    "latitude",  
+    "longitude",  
+    "convert",
+    "wgs84", 
+    "geodesy",  
+    "ellipsoid",
+    "coordinates"
+  ],
+  "author": {
+    "name": "pluto369",
+    "email": "1811783973@qq.com"
+  },
+  "license": "MIT",
   "devDependencies": {
     "typescript": "^5.0.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:pluto369/utm-projection.git"
   }
 }
