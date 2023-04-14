@@ -5,22 +5,22 @@
   "type": "module",
   "module": "./dist/index.js",
   "scripts": {
-    "test": ""
+    "test": "vitest"
   },
-  "exports":{
-    ".":{
-      "import":"./dist/index.js",
-      "types":"./dist/index.d.ts"
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "keywords": [
     "utm",
     "latlon",
-    "latitude",  
-    "longitude",  
+    "latitude",
+    "longitude",
     "convert",
-    "wgs84", 
-    "geodesy",  
+    "wgs84",
+    "geodesy",
     "ellipsoid",
     "coordinates"
   ],
@@ -29,11 +29,12 @@
     "email": "1811783973@qq.com"
   },
   "license": "MIT",
-  "devDependencies": {
-    "typescript": "^5.0.4"
-  },
   "repository": {
     "type": "git",
     "url": "git@github.com:pluto369/utm-projection.git"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
   }
 }

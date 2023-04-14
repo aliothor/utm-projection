@@ -1,349 +1,201 @@
-type ElipsoidType = 'Airy'
-    | 'Australian National'
-    | 'Bessel 1841'
-    | 'Bessel 1841 Nambia'
-    | 'Clarke 1866'
-    | 'Clarke 1880'
-    | 'Everest'
-    | 'Fischer 1960 Mercury'
-    | 'Fischer 1968'
-    | 'GRS 1967'
-    | 'GRS 1980'
-    | 'Helmert 1906'
-    | 'Hough'
-    | 'International'
-    | 'Krassovsky'
-    | 'Modified Airy'
-    | 'Modified Everest'
-    | 'Modified Fischer 1960'
-    | 'South American 1969'
-    | 'WGS 60'
-    | 'WGS 66'
-    | 'WGS 72'
-    | 'ED50'
-    | 'WGS 84'
-    | 'EUREF89'
-    | 'ETRS89';
+var K0 = 0.9996;
 
-type ZoneLetter = 'X'
-    | 'W'
-    | 'V'
-    | 'U'
-    | 'T'
-    | 'S'
-    | 'R'
-    | 'Q'
-    | 'P'
-    | 'N'
-    | 'M'
-    | 'L'
-    | 'K'
-    | 'J'
-    | 'H'
-    | 'G'
-    | 'F'
-    | 'E'
-    | 'D'
-    | 'C'
-    | 'Z';
+var E = 0.00669438;
+var E2 = Math.pow(E, 2);
+var E3 = Math.pow(E, 3);
+var E_P2 = E / (1 - E);
 
-class UTMLatLng {
-    datumName: ElipsoidType = "WGS 84"
-    a: number = 0
-    eccSquared: number = 0
-    status: boolean = false
+var SQRT_E = Math.sqrt(1 - E);
+var _E = (1 - SQRT_E) / (1 + SQRT_E);
+var _E2 = Math.pow(_E, 2);
+var _E3 = Math.pow(_E, 3);
+var _E4 = Math.pow(_E, 4);
+var _E5 = Math.pow(_E, 5);
 
-    constructor(datumNameIn: ElipsoidType | undefined) {
-        if (datumNameIn !== undefined) {
-            this.datumName = "WGS 84";
-        }
-        this.setEllipsoid(this.datumName);
+var M1 = 1 - E / 4 - 3 * E2 / 64 - 5 * E3 / 256;
+var M2 = 3 * E / 8 + 3 * E2 / 32 + 45 * E3 / 1024;
+var M3 = 15 * E2 / 256 + 45 * E3 / 1024;
+var M4 = 35 * E3 / 3072;
+
+var P2 = 3 / 2 * _E - 27 / 32 * _E3 + 269 / 512 * _E5;
+var P3 = 21 / 16 * _E2 - 55 / 32 * _E4;
+var P4 = 151 / 96 * _E3 - 417 / 128 * _E5;
+var P5 = 1097 / 512 * _E4;
+
+var R = 6378137;
+
+var ZONE_LETTERS = 'CDEFGHJKLMNPQRSTUVWXX';
+
+export function toLatLon(easting: number, northing: number, zoneNum: number, zoneLetter: string | null, northern: boolean = true, strict: any = undefined) {
+    strict = strict !== undefined ? strict : true;
+
+    if (!zoneLetter && northern === undefined) {
+        throw new Error('either zoneLetter or northern needs to be set');
+    } else if (zoneLetter && northern !== undefined) {
+        throw new Error('set either zoneLetter or northern, but not both');
     }
 
-    convertLatLngToUtm(latitude: number, longitude: number, precision: number) {
-        var ZoneNumber: number;
-
-        if (this.status) {
-            throw Error('No ecclipsoid data associated with unknown datum: ' + this.datumName)
+    if (strict) {
+        if (easting < 100000 || 1000000 <= easting) {
+            throw new RangeError('easting out of range (must be between 100 000 m and 999 999 m)');
         }
-
-        if (!Number.isInteger(precision)) {
-            throw Error('Precision is not integer number.')
-        }
-
-        var LongTemp = longitude;
-        var LatRad = this.toRadians(latitude);
-        var LongRad = this.toRadians(LongTemp);
-
-        if (LongTemp >= 8 && LongTemp <= 13 && latitude > 54.5 && latitude < 58) {
-            ZoneNumber = 32;
-        } else if (latitude >= 56.0 && latitude < 64.0 && LongTemp >= 3.0 && LongTemp < 12.0) {
-            ZoneNumber = 32;
-        } else {
-            ZoneNumber = ((LongTemp + 180) / 6) + 1;
-
-            if (latitude >= 72.0 && latitude < 84.0) {
-                if (LongTemp >= 0.0 && LongTemp < 9.0) {
-                    ZoneNumber = 31;
-                } else if (LongTemp >= 9.0 && LongTemp < 21.0) {
-                    ZoneNumber = 33;
-                } else if (LongTemp >= 21.0 && LongTemp < 33.0) {
-                    ZoneNumber = 35;
-                } else if (LongTemp >= 33.0 && LongTemp < 42.0) {
-                    ZoneNumber = 37;
-                }
-            }
-        }
-
-        var LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3;  //+3 puts origin in middle of zone
-        var LongOriginRad = this.toRadians(LongOrigin);
-
-        var UTMZone = this.getUtmLetterDesignator(latitude);
-
-        var eccPrimeSquared = (this.eccSquared) / (1 - this.eccSquared);
-
-        var N = this.a / Math.sqrt(1 - this.eccSquared * Math.sin(LatRad) * Math.sin(LatRad));
-        var T = Math.tan(LatRad) * Math.tan(LatRad);
-        var C = eccPrimeSquared * Math.cos(LatRad) * Math.cos(LatRad);
-        var A = Math.cos(LatRad) * (LongRad - LongOriginRad);
-
-        var M = this.a * ((1 - this.eccSquared / 4 - 3 * this.eccSquared * this.eccSquared / 64 - 5 * this.eccSquared * this.eccSquared * this.eccSquared / 256) * LatRad
-            - (3 * this.eccSquared / 8 + 3 * this.eccSquared * this.eccSquared / 32 + 45 * this.eccSquared * this.eccSquared * this.eccSquared / 1024) * Math.sin(2 * LatRad)
-            + (15 * this.eccSquared * this.eccSquared / 256 + 45 * this.eccSquared * this.eccSquared * this.eccSquared / 1024) * Math.sin(4 * LatRad)
-            - (35 * this.eccSquared * this.eccSquared * this.eccSquared / 3072) * Math.sin(6 * LatRad));
-
-        var UTMEasting = 0.9996 * N * (A + (1 - T + C) * A * A * A / 6
-            + (5 - 18 * T + T * T + 72 * C - 58 * eccPrimeSquared) * A * A * A * A * A / 120)
-            + 500000.0;
-
-        var UTMNorthing = 0.9996 * (M + N * Math.tan(LatRad) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24
-            + (61 - 58 * T + T * T + 600 * C - 330 * eccPrimeSquared) * A * A * A * A * A * A / 720));
-
-        if (latitude < 0)
-            UTMNorthing += 10000000.0;
-        UTMNorthing = this.precisionRound(UTMNorthing, precision);
-        UTMEasting = this.precisionRound(UTMEasting, precision);
-        return { Easting: UTMEasting, Northing: UTMNorthing, ZoneNumber: ZoneNumber, ZoneLetter: UTMZone };
-    }
-
-    convertUtmToLatLng(UTMEasting: number, UTMNorthing: number, UTMZoneNumber: number, UTMZoneLetter: number) {
-        var e1 = (1 - Math.sqrt(1 - this.eccSquared)) / (1 + Math.sqrt(1 - this.eccSquared));
-        var x = UTMEasting - 500000.0; //remove 500,000 meter offset for longitude
-        var y = UTMNorthing;
-        var ZoneNumber = UTMZoneNumber;
-        var ZoneLetter = "" + UTMZoneLetter;
-        var NorthernHemisphere;
-
-        if (UTMEasting === undefined) {
-            throw Error("Please pass the UTMEasting!")
-        }
-        if (UTMNorthing === undefined) {
-            throw Error("Please pass the UTMNorthing!");
-        }
-        if (UTMZoneNumber === undefined) {
-            throw Error("Please pass the UTMZoneNumber!");
-        }
-        if (UTMZoneLetter === undefined) {
-            throw Error("Please pass the UTMZoneLetter!");
-        }
-
-        if (['N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'].indexOf(ZoneLetter) !== -1) {
-            NorthernHemisphere = 1;
-        } else {
-            NorthernHemisphere = 0;
-            y -= 10000000.0;
-        }
-
-        var LongOrigin = (ZoneNumber - 1) * 6 - 180 + 3;
-
-        var eccPrimeSquared = (this.eccSquared) / (1 - this.eccSquared);
-
-        var M = y / 0.9996;
-        var mu = M / (this.a * (1 - this.eccSquared / 4 - 3 * this.eccSquared * this.eccSquared / 64 - 5 * this.eccSquared * this.eccSquared * this.eccSquared / 256));
-
-        var phi1Rad = mu + (3 * e1 / 2 - 27 * e1 * e1 * e1 / 32) * Math.sin(2 * mu)
-            + (21 * e1 * e1 / 16 - 55 * e1 * e1 * e1 * e1 / 32) * Math.sin(4 * mu)
-            + (151 * e1 * e1 * e1 / 96) * Math.sin(6 * mu);
-        var phi1 = this.toDegrees(phi1Rad);
-
-        var N1 = this.a / Math.sqrt(1 - this.eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad));
-        var T1 = Math.tan(phi1Rad) * Math.tan(phi1Rad);
-        var C1 = eccPrimeSquared * Math.cos(phi1Rad) * Math.cos(phi1Rad);
-        var R1 = this.a * (1 - this.eccSquared) / Math.pow(1 - this.eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad), 1.5);
-        var D = x / (N1 * 0.9996);
-
-        var Lat = phi1Rad - (N1 * Math.tan(phi1Rad) / R1) * (D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * eccPrimeSquared) * D * D * D * D / 24
-            + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * eccPrimeSquared - 3 * C1 * C1) * D * D * D * D * D * D / 720);
-        Lat = this.toDegrees(Lat);
-
-        var Long = (D - (1 + 2 * T1 + C1) * D * D * D / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * eccPrimeSquared + 24 * T1 * T1)
-            * D * D * D * D * D / 120) / Math.cos(phi1Rad);
-        Long = LongOrigin + this.toDegrees(Long);
-        return { lat: Lat, lng: Long };
-    }
-
-    getUtmLetterDesignator(latitude: number) {
-        if ((84 >= latitude) && (latitude >= 72))
-            return 'X';
-        else if ((72 > latitude) && (latitude >= 64))
-            return 'W';
-        else if ((64 > latitude) && (latitude >= 56))
-            return 'V';
-        else if ((56 > latitude) && (latitude >= 48))
-            return 'U';
-        else if ((48 > latitude) && (latitude >= 40))
-            return 'T';
-        else if ((40 > latitude) && (latitude >= 32))
-            return 'S';
-        else if ((32 > latitude) && (latitude >= 24))
-            return 'R';
-        else if ((24 > latitude) && (latitude >= 16))
-            return 'Q';
-        else if ((16 > latitude) && (latitude >= 8))
-            return 'P';
-        else if ((8 > latitude) && (latitude >= 0))
-            return 'N';
-        else if ((0 > latitude) && (latitude >= -8))
-            return 'M';
-        else if ((-8 > latitude) && (latitude >= -16))
-            return 'L';
-        else if ((-16 > latitude) && (latitude >= -24))
-            return 'K';
-        else if ((-24 > latitude) && (latitude >= -32))
-            return 'J';
-        else if ((-32 > latitude) && (latitude >= -40))
-            return 'H';
-        else if ((-40 > latitude) && (latitude >= -48))
-            return 'G';
-        else if ((-48 > latitude) && (latitude >= -56))
-            return 'F';
-        else if ((-56 > latitude) && (latitude >= -64))
-            return 'E';
-        else if ((-64 > latitude) && (latitude >= -72))
-            return 'D';
-        else if ((-72 > latitude) && (latitude >= -80))
-            return 'C';
-        else
-            return 'Z';
-    }
-
-    setEllipsoid(name: ElipsoidType) {
-        switch (name) {
-            case 'Airy':
-                this.a = 6377563;
-                this.eccSquared = 0.00667054;
-                break;
-            case 'Australian National':
-                this.a = 6378160;
-                this.eccSquared = 0.006694542;
-                break;
-            case 'Bessel 1841':
-                this.a = 6377397;
-                this.eccSquared = 0.006674372;
-                break;
-            case 'Bessel 1841 Nambia':
-                this.a = 6377484;
-                this.eccSquared = 0.006674372;
-                break;
-            case 'Clarke 1866':
-                this.a = 6378206;
-                this.eccSquared = 0.006768658;
-                break;
-            case 'Clarke 1880':
-                this.a = 6378249;
-                this.eccSquared = 0.006803511;
-                break;
-            case 'Everest':
-                this.a = 6377276;
-                this.eccSquared = 0.006637847;
-                break;
-            case 'Fischer 1960 Mercury':
-                this.a = 6378166;
-                this.eccSquared = 0.006693422;
-                break;
-            case 'Fischer 1968':
-                this.a = 6378150;
-                this.eccSquared = 0.006693422;
-                break;
-            case 'GRS 1967':
-                this.a = 6378160;
-                this.eccSquared = 0.006694605;
-                break;
-            case 'GRS 1980':
-                this.a = 6378137;
-                this.eccSquared = 0.00669438;
-                break;
-            case 'Helmert 1906':
-                this.a = 6378200;
-                this.eccSquared = 0.006693422;
-                break;
-            case 'Hough':
-                this.a = 6378270;
-                this.eccSquared = 0.00672267;
-                break;
-            case 'International':
-                this.a = 6378388;
-                this.eccSquared = 0.00672267;
-                break;
-            case 'Krassovsky':
-                this.a = 6378245;
-                this.eccSquared = 0.006693422;
-                break;
-            case 'Modified Airy':
-                this.a = 6377340;
-                this.eccSquared = 0.00667054;
-                break;
-            case 'Modified Everest':
-                this.a = 6377304;
-                this.eccSquared = 0.006637847;
-                break;
-            case 'Modified Fischer 1960':
-                this.a = 6378155;
-                this.eccSquared = 0.006693422;
-                break;
-            case 'South American 1969':
-                this.a = 6378160;
-                this.eccSquared = 0.006694542;
-                break;
-            case 'WGS 60':
-                this.a = 6378165;
-                this.eccSquared = 0.006693422;
-                break;
-            case 'WGS 66':
-                this.a = 6378145;
-                this.eccSquared = 0.006694542;
-                break;
-            case 'WGS 72':
-                this.a = 6378135;
-                this.eccSquared = 0.006694318;
-                break;
-            case 'ED50':
-                this.a = 6378388;
-                this.eccSquared = 0.00672267;
-                break; // International Ellipsoid
-            case 'WGS 84':
-            case 'EUREF89': // Max deviation from WGS 84 is 40 cm/km see http://ocq.dk/euref89 (in danish)
-            case 'ETRS89': // Same as EUREF89 
-                this.a = 6378137;
-                this.eccSquared = 0.00669438;
-                break;
-            default:
-                this.status = true;
-            //   new Error('No ecclipsoid data associated with unknown datum: '.name);
+        if (northing < 0 || northing > 10000000) {
+            throw new RangeError('northing out of range (must be between 0 m and 10 000 000 m)');
         }
     }
-    precisionRound(number: number, precision: number) {
-        const factor = Math.pow(10, precision);
-        return Math.round(number * factor) / factor;
+    if (zoneNum < 1 || zoneNum > 60) {
+        throw new RangeError('zone number out of range (must be between 1 and 60)');
+    }
+    if (zoneLetter) {
+        zoneLetter = zoneLetter.toUpperCase();
+        if (zoneLetter.length !== 1 || ZONE_LETTERS.indexOf(zoneLetter) === -1) {
+            throw new RangeError('zone letter out of range (must be between C and X)');
+        }
+        northern = zoneLetter >= 'N';
     }
 
-    toDegrees(rad: number) {
-        return rad / Math.PI * 180;
+    var x = easting - 500000;
+    var y = northing;
+
+    if (!northern) y -= 1e7;
+
+    var m = y / K0;
+    var mu = m / (R * M1);
+
+    var pRad = mu +
+        P2 * Math.sin(2 * mu) +
+        P3 * Math.sin(4 * mu) +
+        P4 * Math.sin(6 * mu) +
+        P5 * Math.sin(8 * mu);
+
+    var pSin = Math.sin(pRad);
+    var pSin2 = Math.pow(pSin, 2);
+
+    var pCos = Math.cos(pRad);
+
+    var pTan = Math.tan(pRad);
+    var pTan2 = Math.pow(pTan, 2);
+    var pTan4 = Math.pow(pTan, 4);
+
+    var epSin = 1 - E * pSin2;
+    var epSinSqrt = Math.sqrt(epSin);
+
+    var n = R / epSinSqrt;
+    var r = (1 - E) / epSin;
+
+    var c = _E * pCos * pCos;
+    var c2 = c * c;
+
+    var d = x / (n * K0);
+    var d2 = Math.pow(d, 2);
+    var d3 = Math.pow(d, 3);
+    var d4 = Math.pow(d, 4);
+    var d5 = Math.pow(d, 5);
+    var d6 = Math.pow(d, 6);
+
+    var latitude = pRad - (pTan / r) *
+        (d2 / 2 -
+            d4 / 24 * (5 + 3 * pTan2 + 10 * c - 4 * c2 - 9 * E_P2)) +
+        d6 / 720 * (61 + 90 * pTan2 + 298 * c + 45 * pTan4 - 252 * E_P2 - 3 * c2);
+    var longitude = (d -
+        d3 / 6 * (1 + 2 * pTan2 + c) +
+        d5 / 120 * (5 - 2 * c + 28 * pTan2 - 3 * c2 + 8 * E_P2 + 24 * pTan4)) / pCos;
+
+    return {
+        latitude: toDegrees(latitude),
+        longitude: toDegrees(longitude) + zoneNumberToCentralLongitude(zoneNum)
+    };
+}
+
+export function fromLatLon(latitude: number, longitude: number, forceZoneNum: any = undefined) {
+    if (latitude > 84 || latitude < -80) {
+        throw new RangeError('latitude out of range (must be between 80 deg S and 84 deg N)');
+    }
+    if (longitude > 180 || longitude < -180) {
+        throw new RangeError('longitude out of range (must be between 180 deg W and 180 deg E)');
     }
 
-    toRadians(deg: number) {
-        return deg * Math.PI / 180;
+    var latRad = toRadians(latitude);
+    var latSin = Math.sin(latRad);
+    var latCos = Math.cos(latRad);
+
+    var latTan = Math.tan(latRad);
+    var latTan2 = Math.pow(latTan, 2);
+    var latTan4 = Math.pow(latTan, 4);
+
+    var zoneNum: number;
+
+    if (forceZoneNum === undefined) {
+        zoneNum = latLonToZoneNumber(latitude, longitude);
+    } else {
+        zoneNum = forceZoneNum;
+    }
+
+    var zoneLetter = latitudeToZoneLetter(latitude);
+
+    var lonRad = toRadians(longitude);
+    var centralLon = zoneNumberToCentralLongitude(zoneNum);
+    var centralLonRad = toRadians(centralLon);
+
+    var n = R / Math.sqrt(1 - E * latSin * latSin);
+    var c = E_P2 * latCos * latCos;
+
+    var a = latCos * (lonRad - centralLonRad);
+    var a2 = Math.pow(a, 2);
+    var a3 = Math.pow(a, 3);
+    var a4 = Math.pow(a, 4);
+    var a5 = Math.pow(a, 5);
+    var a6 = Math.pow(a, 6);
+
+    var m = R * (M1 * latRad -
+        M2 * Math.sin(2 * latRad) +
+        M3 * Math.sin(4 * latRad) -
+        M4 * Math.sin(6 * latRad));
+    var easting = K0 * n * (a +
+        a3 / 6 * (1 - latTan2 + c) +
+        a5 / 120 * (5 - 18 * latTan2 + latTan4 + 72 * c - 58 * E_P2)) + 500000;
+    var northing = K0 * (m + n * latTan * (a2 / 2 +
+        a4 / 24 * (5 - latTan2 + 9 * c + 4 * c * c) +
+        a6 / 720 * (61 - 58 * latTan2 + latTan4 + 600 * c - 330 * E_P2)));
+    if (latitude < 0) northing += 1e7;
+
+    return {
+        easting: easting,
+        northing: northing,
+        zoneNum: zoneNum,
+        zoneLetter: zoneLetter
+    };
+}
+
+function latitudeToZoneLetter(latitude: number) {
+    if (-80 <= latitude && latitude <= 84) {
+        return ZONE_LETTERS[Math.floor((latitude + 80) / 8)];
+    } else {
+        return null;
     }
 }
 
-export default UTMLatLng
+function latLonToZoneNumber(latitude: number, longitude: number) {
+    if (56 <= latitude && latitude < 64 && 3 <= longitude && longitude < 12) return 32;
+
+    if (72 <= latitude && latitude <= 84 && longitude >= 0) {
+        if (longitude < 9) return 31;
+        if (longitude < 21) return 33;
+        if (longitude < 33) return 35;
+        if (longitude < 42) return 37;
+    }
+
+    return Math.floor((longitude + 180) / 6) + 1;
+}
+
+function zoneNumberToCentralLongitude(zoneNum: number) {
+    return (zoneNum - 1) * 6 - 180 + 3;
+}
+
+function toDegrees(rad: number) {
+    return rad / Math.PI * 180;
+}
+
+function toRadians(deg: number) {
+    return deg * Math.PI / 180;
+}
