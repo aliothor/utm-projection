@@ -1,6 +1,6 @@
 {
   "name": "utm-projection",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "LatLng to UTM converter vice versa",
   "type": "module",
   "module": "./dist/index.js",
