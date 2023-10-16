@@ -2,13 +2,13 @@
  * UTM坐标转WGS84坐标
  * @param easting
  * @param northing
- * @param zoneNum
+ * @param zoneNum utm带号
  * @param zoneLetter
  * @param northern
  * @param strict
  * @returns
  */
-export declare function toLatLon(easting: number, northing: number, zoneNum: number, zoneLetter?: string | null, northern?: boolean, strict?: any): {
+export declare function toLatLon(easting: number, northing: number, zoneNum: number, zoneLetter?: string | null, northern?: boolean, strict?: boolean): {
     latitude: number;
     longitude: number;
 };
@@ -19,7 +19,7 @@ export declare function toLatLon(easting: number, northing: number, zoneNum: num
  * @param forceZoneNum
  * @returns
  */
-export declare function fromLatLon(latitude: number, longitude: number, forceZoneNum?: any): {
+export declare function fromLatLon(latitude: number, longitude: number, forceZoneNum?: number): {
     easting: number;
     northing: number;
     zoneNum: number;

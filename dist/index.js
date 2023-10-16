@@ -18,42 +18,42 @@ var P3 = (21 / 16) * _E2 - (55 / 32) * _E4;
 var P4 = (151 / 96) * _E3 - (417 / 128) * _E5;
 var P5 = (1097 / 512) * _E4;
 var R = 6378137;
-var ZONE_LETTERS = "CDEFGHJKLMNPQRSTUVWXX";
+var ZONE_LETTERS = 'CDEFGHJKLMNPQRSTUVWXX';
 /**
  * UTM坐标转WGS84坐标
  * @param easting
  * @param northing
- * @param zoneNum
+ * @param zoneNum utm带号
  * @param zoneLetter
  * @param northern
  * @param strict
  * @returns
  */
-export function toLatLon(easting, northing, zoneNum, zoneLetter = null, northern = true, strict = undefined) {
+export function toLatLon(easting, northing, zoneNum, zoneLetter = null, northern = true, strict) {
     strict = strict !== undefined ? strict : true;
     if (!zoneLetter && northern === undefined) {
-        throw new Error("either zoneLetter or northern needs to be set");
+        throw new Error('either zoneLetter or northern needs to be set');
     }
     else if (zoneLetter && northern !== undefined) {
-        throw new Error("set either zoneLetter or northern, but not both");
+        throw new Error('set either zoneLetter or northern, but not both');
     }
     if (strict) {
         if (easting < 100000 || 1000000 <= easting) {
-            throw new RangeError("easting out of range (must be between 100 000 m and 999 999 m)");
+            throw new RangeError('easting out of range (must be between 100 000 m and 999 999 m)');
         }
         if (northing < 0 || northing > 10000000) {
-            throw new RangeError("northing out of range (must be between 0 m and 10 000 000 m)");
+            throw new RangeError('northing out of range (must be between 0 m and 10 000 000 m)');
         }
     }
     if (zoneNum < 1 || zoneNum > 60) {
-        throw new RangeError("zone number out of range (must be between 1 and 60)");
+        throw new RangeError('zone number out of range (must be between 1 and 60)');
     }
     if (zoneLetter) {
         zoneLetter = zoneLetter.toUpperCase();
         if (zoneLetter.length !== 1 || ZONE_LETTERS.indexOf(zoneLetter) === -1) {
-            throw new RangeError("zone letter out of range (must be between C and X)");
+            throw new RangeError('zone letter out of range (must be between C and X)');
         }
-        northern = zoneLetter >= "N";
+        northern = zoneLetter >= 'N';
     }
     var x = easting - 500000;
     var y = northing;
@@ -61,7 +61,11 @@ export function toLatLon(easting, northing, zoneNum, zoneLetter = null, northern
         y -= 1e7;
     var m = y / K0;
     var mu = m / (R * M1);
-    var pRad = mu + P2 * Math.sin(2 * mu) + P3 * Math.sin(4 * mu) + P4 * Math.sin(6 * mu) + P5 * Math.sin(8 * mu);
+    var pRad = mu +
+        P2 * Math.sin(2 * mu) +
+        P3 * Math.sin(4 * mu) +
+        P4 * Math.sin(6 * mu) +
+        P5 * Math.sin(8 * mu);
     var pSin = Math.sin(pRad);
     var pSin2 = Math.pow(pSin, 2);
     var pCos = Math.cos(pRad);
@@ -81,9 +85,12 @@ export function toLatLon(easting, northing, zoneNum, zoneLetter = null, northern
     var d5 = Math.pow(d, 5);
     var d6 = Math.pow(d, 6);
     var latitude = pRad -
-        (pTan / r) * (d2 / 2 - (d4 / 24) * (5 + 3 * pTan2 + 10 * c - 4 * c2 - 9 * E_P2)) +
+        (pTan / r) *
+            (d2 / 2 - (d4 / 24) * (5 + 3 * pTan2 + 10 * c - 4 * c2 - 9 * E_P2)) +
         (d6 / 720) * (61 + 90 * pTan2 + 298 * c + 45 * pTan4 - 252 * E_P2 - 3 * c2);
-    var longitude = (d - (d3 / 6) * (1 + 2 * pTan2 + c) + (d5 / 120) * (5 - 2 * c + 28 * pTan2 - 3 * c2 + 8 * E_P2 + 24 * pTan4)) /
+    var longitude = (d -
+        (d3 / 6) * (1 + 2 * pTan2 + c) +
+        (d5 / 120) * (5 - 2 * c + 28 * pTan2 - 3 * c2 + 8 * E_P2 + 24 * pTan4)) /
         pCos;
     return {
         latitude: toDegrees(latitude),
@@ -97,12 +104,12 @@ export function toLatLon(easting, northing, zoneNum, zoneLetter = null, northern
  * @param forceZoneNum
  * @returns
  */
-export function fromLatLon(latitude, longitude, forceZoneNum = undefined) {
+export function fromLatLon(latitude, longitude, forceZoneNum) {
     if (latitude > 84 || latitude < -80) {
-        throw new RangeError("latitude out of range (must be between 80 deg S and 84 deg N)");
+        throw new RangeError('latitude out of range (must be between 80 deg S and 84 deg N)');
     }
     if (longitude > 180 || longitude < -180) {
-        throw new RangeError("longitude out of range (must be between 180 deg W and 180 deg E)");
+        throw new RangeError('longitude out of range (must be between 180 deg W and 180 deg E)');
     }
     var latRad = toRadians(latitude);
     var latSin = Math.sin(latRad);
@@ -129,8 +136,16 @@ export function fromLatLon(latitude, longitude, forceZoneNum = undefined) {
     var a4 = Math.pow(a, 4);
     var a5 = Math.pow(a, 5);
     var a6 = Math.pow(a, 6);
-    var m = R * (M1 * latRad - M2 * Math.sin(2 * latRad) + M3 * Math.sin(4 * latRad) - M4 * Math.sin(6 * latRad));
-    var easting = K0 * n * (a + (a3 / 6) * (1 - latTan2 + c) + (a5 / 120) * (5 - 18 * latTan2 + latTan4 + 72 * c - 58 * E_P2)) +
+    var m = R *
+        (M1 * latRad -
+            M2 * Math.sin(2 * latRad) +
+            M3 * Math.sin(4 * latRad) -
+            M4 * Math.sin(6 * latRad));
+    var easting = K0 *
+        n *
+        (a +
+            (a3 / 6) * (1 - latTan2 + c) +
+            (a5 / 120) * (5 - 18 * latTan2 + latTan4 + 72 * c - 58 * E_P2)) +
         500000;
     var northing = K0 *
         (m +

@@ -12,9 +12,9 @@ jobs:
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
         with:
-          node-version: "18.16.0"
+          node-version: "20.8.0"
           registry-url: "https://registry.npmjs.org"
-      - run: npm i
+      - run: npm ci
       - run: npm run build
       - run: npm publish
         env:
