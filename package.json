@@ -35,8 +35,8 @@
   },
   "license": "MIT",
   "repository": {
-    "type": "git",
-    "url": "git@github.com:pluto369/utm-projection.git"
+    "type": "https",
+    "url": "https://github.com/aliothor/utm-projection.git"
   },
   "devDependencies": {
     "typescript": "^5.2.2",
