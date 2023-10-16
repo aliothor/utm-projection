@@ -1,14 +1,18 @@
-import { describe, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import { fromLatLon, toLatLon } from "../src";
 
-describe("wgs 84", () => {
-  it("test1", () => {
+describe("wgs84 to utm", () => {
+  it("测试wgs84坐标到utm坐标相互转换", () => {
     // 339145 5.06665e+06
     const x = 132.93249308340933;
     const y = 45.734655020259765;
-    const res = fromLatLon(y, x);
-    console.log(res);
-    const res2 = toLatLon(res.easting, res.northing, res.zoneNum);
-    console.log(res2);
+    const utm_coord = fromLatLon(y, x);
+    const wgs_coord = toLatLon(
+      utm_coord.easting,
+      utm_coord.northing,
+      utm_coord.zoneNum
+    );
+    expect(wgs_coord.longitude).toBeCloseTo(x, 5);
+    expect(wgs_coord.latitude).toBeCloseTo(y, 5);
   });
 });

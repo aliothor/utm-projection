@@ -1,9 +1,10 @@
 {
   "name": "utm-projection",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "LatLng to UTM converter vice versa",
   "type": "module",
-  "module": "./dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "vitest run",
     "build": "tsc"
@@ -35,7 +36,8 @@
     "url": "git@github.com:pluto369/utm-projection.git"
   },
   "devDependencies": {
-    "typescript": "^5.0.4",
-    "vitest": "^0.31.0"
+    "typescript": "^5.2.2",
+    "vite": "^4.4.11",
+    "vitest": "^0.34.6"
   }
 }
