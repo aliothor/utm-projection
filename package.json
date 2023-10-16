@@ -31,6 +31,7 @@
     "email": "1811783973@qq.com"
   },
   "publishConfig": {
+    
     "registry": "https://registry.npmjs.org/"
   },
   "license": "MIT",
