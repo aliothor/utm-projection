@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fromLatLon, toLatLon } from "../src";
+import { fromLatLon, toLatLon } from "../";
 
 describe("wgs84 to utm", () => {
   it("测试wgs84坐标到utm坐标相互转换", () => {

@@ -2,19 +2,6 @@
   "name": "utm-projection",
   "version": "1.0.6",
   "description": "LatLng to UTM converter vice versa",
-  "type": "module",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "test": "vitest run",
-    "build": "tsc"
-  },
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
   "keywords": [
     "utm",
     "latlon",
@@ -26,22 +13,46 @@
     "ellipsoid",
     "coordinates"
   ],
-  "author": {
-    "name": "aliothor",
-    "email": "1811783973@qq.com"
-  },
-  "publishConfig": {
-    "access":"public",
-    "registry": "https://registry.npmjs.org/"
-  },
-  "license": "MIT",
   "repository": {
     "type": "https",
     "url": "git+https://github.com/aliothor/utm-projection.git"
   },
+  "license": "MIT",
+  "author": {
+    "name": "aliothor",
+    "email": "1811783973@qq.com"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "unbuild",
+    "prepublishOnly": "pnpm run build",
+    "release": "bumpp && npm publish",
+    "test": "vitest run",
+    "dev": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
   "devDependencies": {
-    "typescript": "^5.2.2",
-    "vite": "^4.4.11",
-    "vitest": "^0.34.6"
+    "bumpp": "^9.4.1",
+    "typescript": "^5.4.5",
+    "unbuild": "^2.0.0",
+    "vitest": "^1.6.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

@@ -8,7 +8,7 @@
  * @param strict
  * @returns
  */
-export declare function toLatLon(easting: number, northing: number, zoneNum: number, zoneLetter?: string | null, northern?: boolean, strict?: boolean): {
+declare function toLatLon(easting: number, northing: number, zoneNum: number, zoneLetter?: string | null, northern?: boolean, strict?: boolean): {
     latitude: number;
     longitude: number;
 };
@@ -19,10 +19,11 @@ export declare function toLatLon(easting: number, northing: number, zoneNum: num
  * @param forceZoneNum
  * @returns
  */
-export declare function fromLatLon(latitude: number, longitude: number, forceZoneNum?: number): {
+declare function fromLatLon(latitude: number, longitude: number, forceZoneNum?: number): {
     easting: number;
     northing: number;
     zoneNum: number;
     zoneLetter: string | null;
 };
-//# sourceMappingURL=index.d.ts.map
+
+export { fromLatLon, toLatLon };
